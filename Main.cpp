@@ -674,7 +674,6 @@ string selectTask(int opt = 0) {
     return strOpt;
 }
 
-
 void showMostSpecificActiveTasksPerson(){
   string respuesta=selectTask();
   if (respuesta!="empty"){
@@ -707,6 +706,132 @@ void showMostSpecificActiveTasksPerson(){
   }
 }
 
+/**
+ * @brief Encuentra y muestra el tipo o los tipos de tarea más comunes entre todas las tareas activas.
+ *
+ * Esta función recorre todas las personas registradas y sus tareas activas para contar cuántas veces aparece cada tipo de tarea.
+ * Utiliza arreglos para almacenar los nombres de los tipos de tarea y sus conteos correspondientes.
+ * Al finalizar, determina el o los tipos de tarea que tienen el mayor número de ocurrencias y los muestra en la consola.
+ * Si no hay tareas activas, informa al usuario que no existen tareas activas.
+ *
+ * @author Joseph
+ */
+
+void commonTypeTask() {
+    int index = 0;
+    const int MAX_TASK_TYPES = 100;
+    std::string taskTypeNames[MAX_TASK_TYPES];
+    int taskTypeCounts[MAX_TASK_TYPES];
+    int taskTypeNum = 0; 
+    for (int i = 0; i < MAX_TASK_TYPES; i++) {
+        taskTypeCounts[i] = 0;
+    }
+    while (people.get(index) != nullptr) {
+        int numTasks = people.get(index)->activeTasks.getLength();
+        for (int i = 0; i < numTasks; i++) {
+            std::string taskTypeName = people.get(index)->activeTasks.get(i)->type->name;
+            int j;
+            for (j = 0; j < taskTypeNum; j++) {
+                if (taskTypeNames[j] == taskTypeName) {
+                    taskTypeCounts[j]++;
+                    break;
+                }
+            }
+            if (j == taskTypeNum) {
+                if (taskTypeNum >= MAX_TASK_TYPES) {
+                    std::cout << "Error: demasiados tipos de tareas." << std::endl;
+                    return;
+                }
+                taskTypeNames[taskTypeNum] = taskTypeName;
+                taskTypeCounts[taskTypeNum] = 1;
+                taskTypeNum++;
+            }
+        }
+        index++;
+    }
+    if (taskTypeNum > 0) {
+        int maxCount = 0;
+        for (int i = 0; i < taskTypeNum; i++) {
+            if (taskTypeCounts[i] > maxCount) {
+                maxCount = taskTypeCounts[i];
+            }
+        }
+        int numMostCommon = 0;
+        std::string mostCommonTaskTypes[MAX_TASK_TYPES];
+        for (int i = 0; i < taskTypeNum; i++) {
+            if (taskTypeCounts[i] == maxCount) {
+                mostCommonTaskTypes[numMostCommon] = taskTypeNames[i];
+                numMostCommon++;
+            }
+        }
+        std::cout << "Tipo(s) de tarea mas comun(es) con " << maxCount << " ocurrencia(s):" << std::endl;
+        for (int i = 0; i < numMostCommon; i++) {
+            std::cout << "- " << mostCommonTaskTypes[i] << std::endl;
+        }
+    } else {
+        std::cout << "No hay tareas activas" << std::endl;
+    }
+}
+
+/**
+ * @brief Encuentra y muestra la persona con más tareas vencidas de un tipo específico hasta una fecha dada.
+ *
+ * Esta función permite al usuario seleccionar un tipo de tarea y especificar una fecha límite en formato "dd-mm-yyyy".
+ * Recorre todas las personas y sus tareas activas para contar cuántas tareas de ese tipo están vencidas
+ * (es decir, cuya fecha es anterior a la fecha límite) para cada persona.
+ * Al finalizar, determina la persona que tiene el mayor número de tareas vencidas de ese tipo hasta la fecha especificada
+ * y muestra su nombre y el número de tareas vencidas.
+ * Si no hay tareas vencidas de ese tipo hasta la fecha dada, informa al usuario.
+ *
+ * @author Joseph
+ */
+void mostExpiredTaskPerson() {
+    string respuesta = selectTask();
+    if (respuesta != "empty") {
+        string dateStr = promptInput<string>("Ingrese la fecha limite (dd-mm-yyyy): ");
+        struct tm date;
+        memset(&date, 0, sizeof(struct tm));
+        int day, month, year;
+        if (sscanf(dateStr.c_str(), "%d-%d-%d", &day, &month, &year) != 3) {
+            cout << "Formato de fecha invalido." << endl;
+            return;
+        }
+        date.tm_mday = day;
+        date.tm_mon = month - 1;    // Los meses en struct tm van de 0 (enero) a 11 (diciembre)
+        date.tm_year = year - 1900; // Los años en struct tm se cuentan desde 1900
+        int index = 0;
+        int maxTasks = 0;
+        int selectedIndex = -1;
+        while (people.get(index) != nullptr) {
+            int tasks = 0;
+            for (int i = 0; i < people.get(index)->activeTasks.getLength(); i++) {
+                if (people.get(index)->activeTasks.get(i)->type->name == respuesta) {
+                    struct tm taskDate = people.get(index)->activeTasks.get(i)->date;
+                    time_t taskTime = mktime(&taskDate);
+                    time_t inputTime = mktime(&date);
+                    if (difftime(taskTime, inputTime) < 0) {
+                        tasks++;
+                    }
+                }
+            }
+            if (tasks > maxTasks) {
+                selectedIndex = index;
+                maxTasks = tasks;
+            }
+            index++;
+        }
+        if (maxTasks > 0 && selectedIndex != -1) {
+            cout << "Persona con mas tareas vencidas de tipo " << respuesta << " hasta la fecha " << dateStr << ": " << people.get(selectedIndex)->name << endl;
+            cout << "Tareas vencidas: " << maxTasks << endl;
+        } else {
+            cout << "No hay tareas vencidas de tipo " << respuesta << " hasta la fecha " << dateStr << endl;
+        }
+    } else {
+        cout << "No existe ningún tipo de tarea en este momento." << endl;
+    }
+}
+
+
 void queryMenu(){
     system("cls");
   COORD pos = getCursorPosition(hConsole);
@@ -733,6 +858,16 @@ void queryMenu(){
         break;
       case 2:
         showMostSpecificActiveTasksPerson();
+        cout << "Presione enter para continuar...";
+        waitEnter();
+        break;
+      case 3:
+        commonTypeTask();
+        cout << "Presione enter para continuar...";
+        waitEnter();
+        break;
+      case 4:
+        mostExpiredTaskPerson();
         cout << "Presione enter para continuar...";
         waitEnter();
         break;
