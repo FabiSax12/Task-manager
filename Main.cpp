@@ -831,6 +831,78 @@ void mostExpiredTaskPerson() {
     }
 }
 
+void mostCommonExpiredTask() {
+    string dateStr = promptInput<string>("Ingrese la fecha limite (dd-mm-yyyy): ");
+    struct tm date;
+    memset(&date, 0, sizeof(struct tm));
+    int day, month, year;
+    if (sscanf(dateStr.c_str(), "%d-%d-%d", &day, &month, &year) != 3) {
+        cout << "Formato de fecha invalido." << endl;
+        return;
+    }
+    date.tm_mday = day;
+    date.tm_mon = month - 1;    // Los meses en struct tm van de 0 (enero) a 11 (diciembre)
+    date.tm_year = year - 1900; // Los años en struct tm se cuentan desde 1900
+    int index = 0;
+    const int MAX_TASK_TYPES = 100;
+    std::string taskTypeNames[MAX_TASK_TYPES];
+    int taskTypeCounts[MAX_TASK_TYPES];
+    int taskTypeNum = 0;
+    for (int i = 0; i < MAX_TASK_TYPES; i++) {
+        taskTypeCounts[i] = 0;
+    }
+    while (people.get(index) != nullptr) {
+        int numTasks = people.get(index)->activeTasks.getLength();
+        for (int i = 0; i < numTasks; i++) {
+            std::string taskTypeName = people.get(index)->activeTasks.get(i)->type->name;
+            struct tm taskDate = people.get(index)->activeTasks.get(i)->date;
+            time_t taskTime = mktime(&taskDate);
+            time_t inputTime = mktime(&date);
+            if (difftime(taskTime, inputTime) < 0) {
+                int j;
+                for (j = 0; j < taskTypeNum; j++) {
+                    if (taskTypeNames[j] == taskTypeName) {
+                        taskTypeCounts[j]++;
+                        break;
+                    }
+                }
+                if (j == taskTypeNum) {
+                    if (taskTypeNum >= MAX_TASK_TYPES) {
+                        std::cout << "Error: demasiados tipos de tareas." << std::endl;
+                        return;
+                    }
+                    taskTypeNames[taskTypeNum] = taskTypeName;
+                    taskTypeCounts[taskTypeNum] = 1;
+                    taskTypeNum++;
+                }
+            }
+        }
+        index++;
+    }
+    if (taskTypeNum > 0) {
+        int maxCount = 0;
+        for (int i = 0; i < taskTypeNum; i++) {
+            if (taskTypeCounts[i] > maxCount) {
+                maxCount = taskTypeCounts[i];
+            }
+        }
+        int numMostCommon = 0;
+        std::string mostCommonTaskTypes[MAX_TASK_TYPES];
+        for (int i = 0; i < taskTypeNum; i++) {
+            if (taskTypeCounts[i] == maxCount) {
+                mostCommonTaskTypes[numMostCommon] = taskTypeNames[i];
+                numMostCommon++;
+            }
+        }
+        std::cout << "Tipo(s) de tarea mas comun(es) que se vencen antes de la fecha " << dateStr << " con " << maxCount << " ocurrencia(s):" << std::endl;
+        for (int i = 0; i < numMostCommon; i++) {
+            std::cout << "- " << mostCommonTaskTypes[i] << std::endl;
+        }
+    } else {
+        std::cout << "No hay tareas activas que se vencen antes de la fecha " << dateStr << std::endl;
+    }
+}
+
 
 void queryMenu(){
     system("cls");
@@ -868,6 +940,11 @@ void queryMenu(){
         break;
       case 4:
         mostExpiredTaskPerson();
+        cout << "Presione enter para continuar...";
+        waitEnter();
+        break;
+      case 5:
+        mostCommonExpiredTask();
         cout << "Presione enter para continuar...";
         waitEnter();
         break;
