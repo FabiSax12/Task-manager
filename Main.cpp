@@ -603,7 +603,6 @@ void editionMenu() {
 }
 /**
  * @brief Encuentra la pesona con mas tareas activas.
- * 1. ¿Cuál es la persona que tiene más tareas activas?
  * Recorre toda la lista de personas y almacena la cantidad de tareas activas, si hay una cantidad mayor, la actualizara
  * y guardara el indice de la persona en la lista para ser mostrado posteriormente.
  *
@@ -628,10 +627,14 @@ void showMostActiveTasksPerson(int index=0,int maxTasks=0,int selectedIndex=0){
 }
 
 /**
- * @brief Muestra la persona con mayor cantidad de tareas de un tipo especificado.
- * 2. ¿Cuál es la persona que tiene más tareas activas de un tipo X?
- * .
+ * @brief Permite al usuario seleccionar un tipo de tarea de la lista usando las flechas y la barra espaciadora.
+ * 
+ * Esta función muestra un mensaje para seleccionar un tipo de tarea y permite al usuario navegar
+ * por los tipos disponibles usando las teclas de flecha arriba y abajo. El usuario puede seleccionar
+ * un tipo de tarea presionando la barra espaciadora. Si la lista de tipos de tarea está vacía, retorna "empty".
  *
+ * @param opt (Opcional) El índice inicial para la selección de la tarea. El valor predeterminado es 0.
+ * @return El nombre del tipo de tarea seleccionado como una cadena, o "empty" si no se selecciona ninguno.
  * @author Joseph
  */
 string selectTask(int opt = 0) {
@@ -640,56 +643,64 @@ string selectTask(int opt = 0) {
     }
     string strOpt;
     cout << "Selecciona el tipo de tarea:\n(Muevete con las flechas (up & down); presiona ESPACIO para seleccionar)\n";
-    COORD posText = getCursorPosition(hConsole);
+    COORD posText = getCursorPosition(hConsole);/*Obtiene la posicion actual del cursor*/
 
     bool selection = false;
     while (!selection) {
-        // Actualizar y mostrar la opción actual
         strOpt = taskTypes.get(opt)->name;
-        moveCursor(15, posText.Y, hConsole);
-        deleteLine(hConsole);
-        moveCursor(posText.X, posText.Y, hConsole);
+        moveCursor(15, posText.Y, hConsole);        /*Mueve el cursor a una posicion en especifico*/
+        deleteLine(hConsole);                       /*Borra la linea actual en la consola*/
+        moveCursor(posText.X, posText.Y, hConsole);/*Vuelve a la posicion original del cursor*/
         cout << "Tipo de tarea: " << strOpt <<endl;
 
-        // Verificar entradas de teclado
         if (GetAsyncKeyState(VK_ESCAPE) & 0x8000) {
             return "empty";
         } else if (GetAsyncKeyState(VK_DOWN) & 0x8000) {
             opt++;
-            while (GetAsyncKeyState(VK_DOWN) & 0x8000) { Sleep(50); }
+            while (GetAsyncKeyState(VK_DOWN) & 0x8000) { Sleep(50); }/*Espera que se suelte la tecla*/
         } else if (GetAsyncKeyState(VK_UP) & 0x8000) {
             opt--;
-            while (GetAsyncKeyState(VK_UP) & 0x8000) { Sleep(50); }
+            while (GetAsyncKeyState(VK_UP) & 0x8000) { Sleep(50); }/*Espera que se suelte la tecla*/
         } else if (GetAsyncKeyState(VK_SPACE) & 0x8000) {
-            while (GetAsyncKeyState(VK_SPACE) & 0x8000) { Sleep(50); }
-            FlushConsoleInputBuffer(GetStdHandle(STD_INPUT_HANDLE));
+            while (GetAsyncKeyState(VK_SPACE) & 0x8000) { Sleep(50); }/*Espera que se suelte la tecla*/
+            FlushConsoleInputBuffer(GetStdHandle(STD_INPUT_HANDLE));/*Limpia el buffer de entrada de la consola*/
             selection = true;
             break;
         }
-        if (opt < 0) { opt = taskTypes.getLength(); }
-        else if (opt > taskTypes.getLength()) { opt = 0; }
+        if (opt < 0) { opt = taskTypes.getLength(); }/*Si el indice es menor que cero, va al final de la lista*/
+        else if (opt > taskTypes.getLength()) { opt = 0; } /*Si el indice supoera el tamao vuelve al inicio*/
 
-        Sleep(10); 
+        Sleep(10); /*Evitar la sobrecarga de la CPU*/
     }
     return strOpt;
 }
 
+/**
+ * @brief Muestra la persona que tiene más tareas activas de un tipo específico.
+ *
+ * Esta función permite al usuario seleccionar un tipo de tarea y luego recorre la lista de personas
+ * para determinar quién tiene el mayor número de tareas activas de ese tipo. Si encuentra una persona
+ * con tareas activas del tipo seleccionado, muestra su nombre y el número de tareas registradas.
+ * Si no hay tareas activas de ese tipo, muestra un mensaje indicándolo.
+ * 
+ * @author Joseph
+ */
 void showMostSpecificActiveTasksPerson(){
   string respuesta=selectTask();
   if (respuesta!="empty"){
     int index=0;
     int maxTasks=0;
     int selectedIndex=0;
-    while(people.get(index)!=nullptr){
+    while(people.get(index)!=nullptr){/*Itera a través de todas las personas en la lista*/
       int tasks = 0;
-      for (int i = 0; i < people.get(index)->activeTasks.getLength(); i++) {
-        if (people.get(index)->activeTasks.get(i)->type->name == respuesta) {
+      for (int i = 0; i < people.get(index)->activeTasks.getLength(); i++) {/*Recorre las tareas activas de la persona actual*/
+        if (people.get(index)->activeTasks.get(i)->type->name == respuesta) {/*Comprueba si el tipo de tarea coincide con el seleccionado*/
           tasks++;
         }
       }
       if (tasks > maxTasks) {
-        selectedIndex = index;
-        maxTasks = tasks;
+        selectedIndex = index;/*Actualiza el índice de la persona con más tareas de este tipo*/
+        maxTasks = tasks;/*Actualiza el máximo de tareas encontradas*/
       }
       index++;
     }
@@ -716,7 +727,6 @@ void showMostSpecificActiveTasksPerson(){
  *
  * @author Joseph
  */
-
 void commonTypeTask() {
     int index = 0;
     const int MAX_TASK_TYPES = 100;
@@ -792,10 +802,7 @@ void mostExpiredTaskPerson() {
         struct tm date;
         memset(&date, 0, sizeof(struct tm));
         int day, month, year;
-        if (sscanf(dateStr.c_str(), "%d-%d-%d", &day, &month, &year) != 3) {
-            cout << "Formato de fecha invalido." << endl;
-            return;
-        }
+        if(!validateDates(day, month, year, dateStr)){return;}/*Si el formato de fecha es invalido se retorna*/
         date.tm_mday = day;
         date.tm_mon = month - 1;    // Los meses en struct tm van de 0 (enero) a 11 (diciembre)
         date.tm_year = year - 1900; // Los años en struct tm se cuentan desde 1900
@@ -831,20 +838,28 @@ void mostExpiredTaskPerson() {
     }
 }
 
+/**
+ * @brief Muestra los tipos de tareas más comunes que vencen antes de una fecha dada.
+ *
+ * Esta función solicita al usuario que ingrese una fecha límite en el formato "dd-mm-yyyy".
+ * Luego, recorre todas las tareas activas de todas las personas para encontrar aquellas
+ * que vencen antes de la fecha ingresada. Cuenta las ocurrencias de cada tipo de tarea
+ * entre estas tareas vencidas e identifica las más comunes.
+ * Finalmente, muestra los tipos de tareas más comunes junto con el número de ocurrencias.
+ * 
+ * @author Joseph
+ */
 void mostCommonExpiredTask() {
     string dateStr = promptInput<string>("Ingrese la fecha limite (dd-mm-yyyy): ");
     struct tm date;
     memset(&date, 0, sizeof(struct tm));
     int day, month, year;
-    if (sscanf(dateStr.c_str(), "%d-%d-%d", &day, &month, &year) != 3) {
-        cout << "Formato de fecha invalido." << endl;
-        return;
-    }
+    if(!validateDates(day, month, year, dateStr)){return;}/*Si el formato de fecha es invalido se retorna*/
     date.tm_mday = day;
-    date.tm_mon = month - 1;    // Los meses en struct tm van de 0 (enero) a 11 (diciembre)
-    date.tm_year = year - 1900; // Los años en struct tm se cuentan desde 1900
+    date.tm_mon = month - 1;    /*Los meses en struct tm van de 0 (enero) a 11 (diciembre)*/
+    date.tm_year = year - 1900; /*Los años en struct tm se cuentan desde 1900*/
     int index = 0;
-    const int MAX_TASK_TYPES = 100;
+    const int MAX_TASK_TYPES = 100; 
     std::string taskTypeNames[MAX_TASK_TYPES];
     int taskTypeCounts[MAX_TASK_TYPES];
     int taskTypeNum = 0;
@@ -856,9 +871,9 @@ void mostCommonExpiredTask() {
         for (int i = 0; i < numTasks; i++) {
             std::string taskTypeName = people.get(index)->activeTasks.get(i)->type->name;
             struct tm taskDate = people.get(index)->activeTasks.get(i)->date;
-            time_t taskTime = mktime(&taskDate);
-            time_t inputTime = mktime(&date);
-            if (difftime(taskTime, inputTime) < 0) {
+            time_t taskTime = mktime(&taskDate);        /*Convierte la fecha de vencimiento de la tarea a time_t para poder compararla.*/
+            time_t inputTime = mktime(&date);           /*Convierte la fecha ingresada a time_t*/
+            if (difftime(taskTime, inputTime) < 0) {    /*Verifica si la tarea vence antes de la fecha ingresada*/
                 int j;
                 for (j = 0; j < taskTypeNum; j++) {
                     if (taskTypeNames[j] == taskTypeName) {
@@ -903,7 +918,195 @@ void mostCommonExpiredTask() {
     }
 }
 
+/**
+ * @brief Muestra el nivel o niveles de importancia más comunes entre las tareas activas de todas las personas.
+ *
+ * Esta función recorre las tareas activas de todas las personas, cuenta cuántas tareas hay de cada nivel de importancia
+ * ("Alto", "Medio", "Bajo"), y luego determina cuál o cuáles niveles de importancia son los más comunes.
+ * Finalmente, muestra estos niveles junto con el número de ocurrencias.
+ * @author Joseph
+ */
+void mostCommonImportance() {
+    const int MAX_IMPORTANCES = 3;
+    std::string importanceNames[MAX_IMPORTANCES] = {"Alto", "Medio", "Bajo"};
+    int importanceCounts[MAX_IMPORTANCES];
+    for (int i = 0; i < MAX_IMPORTANCES; i++) {
+        importanceCounts[i] = 0;
+    }
+    int index = 0;
+    while (people.get(index) != nullptr) {                      /*Itera sobre todas las personas hasta que no haya más*/
+        int numTasks = people.get(index)->activeTasks.getLength();
+        for (int i = 0; i < numTasks; i++) {                     
+            std::string taskImportance = people.get(index)->activeTasks.get(i)->importance;
+            for (int j = 0; j < MAX_IMPORTANCES; j++) {         /*Encuentra el índice correspondiente al nivel de importancia*/
+                if (taskImportance == importanceNames[j]) {
+                    importanceCounts[j]++;
+                    break;
+                }
+            }
+        }
+        index++;
+    }
+    int maxCount = 0;
+    for (int i = 0; i < MAX_IMPORTANCES; i++) {
+        if (importanceCounts[i] > maxCount) {
+            maxCount = importanceCounts[i];
+        }
+    }   /*Determina el número máximo de ocurrencias entre los niveles de importancia*/
+    int numMostCommon = 0;
+    std::string mostCommonImportances[MAX_IMPORTANCES];
+    for (int i = 0; i < MAX_IMPORTANCES; i++) {
+        if (importanceCounts[i] == maxCount) {
+            mostCommonImportances[numMostCommon] = importanceNames[i];
+            numMostCommon++;
+        }
+    }   /*Recolecta los niveles de importancia más comunes*/
+    std::cout << "Nivel(es) de importancia mas comun(es) con " << maxCount << " ocurrencia(s):" << std::endl;
+    for (int i = 0; i < numMostCommon; i++) {
+        std::cout << "- " << mostCommonImportances[i] << std::endl;
+    }
+}
 
+/**
+ * @brief Muestra los tipos de tareas más comunes con importancia "Medio" entre las tareas activas.
+ *
+ * Esta función recorre las tareas activas de todas las personas, filtra aquellas con importancia "Medio",
+ * cuenta cuántas veces aparece cada tipo de tarea y determina cuál o cuáles son los más comunes.
+ * Finalmente, muestra los tipos de tareas más comunes junto con el número de ocurrencias.
+ * @author Joseph
+ */
+void mostCommonTypeTaskOnActiveMediumImportance(){
+    int index = 0;
+    const int MAX_TASK_TYPES = 100;
+    std::string taskTypeNames[MAX_TASK_TYPES];
+    int taskTypeCounts[MAX_TASK_TYPES];
+    int taskTypeNum = 0;
+    for (int i = 0; i < MAX_TASK_TYPES; i++) {
+        taskTypeCounts[i] = 0;
+    }
+    while (people.get(index) != nullptr) {
+        int numTasks = people.get(index)->activeTasks.getLength();
+        for (int i = 0; i < numTasks; i++) {
+            if (people.get(index)->activeTasks.get(i)->importance == "Medio") {
+                std::string taskTypeName = people.get(index)->activeTasks.get(i)->type->name;
+                int j;
+                for (j = 0; j < taskTypeNum; j++) {
+                    if (taskTypeNames[j] == taskTypeName) {
+                        taskTypeCounts[j]++;
+                        break;
+                    }
+                }       /*Busca el tipo de tarea en el arreglo existente y aumenta su contador si ya existe*/
+                if (j == taskTypeNum) {
+                    if (taskTypeNum >= MAX_TASK_TYPES) {
+                        std::cout << "Error: demasiados tipos de tareas." << std::endl;
+                        return;
+                    }
+                    taskTypeNames[taskTypeNum] = taskTypeName;
+                    taskTypeCounts[taskTypeNum] = 1;
+                    taskTypeNum++;
+                }   /*Agrega un nuevo tipo de tarea al arreglo si no existía*/
+            }
+        }
+        index++;
+    }
+    if (taskTypeNum > 0) {
+        int maxCount = 0;
+        for (int i = 0; i < taskTypeNum; i++) {
+            if (taskTypeCounts[i] > maxCount) {
+                maxCount = taskTypeCounts[i];
+            }
+        }       /*Encuentra el número máximo de ocurrencias entre los tipos de tareas*/
+        int numMostCommon = 0;
+        std::string mostCommonTaskTypes[MAX_TASK_TYPES];
+        for (int i = 0; i < taskTypeNum; i++) {
+            if (taskTypeCounts[i] == maxCount) {
+                mostCommonTaskTypes[numMostCommon] = taskTypeNames[i];
+                numMostCommon++;
+            }
+        }           /*Recopila los tipos de tareas con el máximo número de ocurrencias*/
+        std::cout << "Tipo(s) de tarea mas comun(es) con importancia 'Medio' con " << maxCount << " ocurrencia(s):" << std::endl;
+        for (int i = 0; i < numMostCommon; i++) {
+            std::cout << "- " << mostCommonTaskTypes[i] << std::endl;
+        }
+    } else {
+        std::cout << "No hay tareas activas con importancia 'Medio'" << std::endl;
+    }
+}
+
+/**
+ * @brief Muestra los tipos de tareas más comunes con importancia "Alto" entre las tareas completadas.
+ *
+ * Esta función recorre las tareas completadas de todas las personas, filtra aquellas con importancia "Alto",
+ * cuenta cuántas veces aparece cada tipo de tarea y determina cuál o cuáles son los más comunes.
+ * Finalmente, muestra estos tipos de tareas junto con el número de ocurrencias.
+ * @author Joseph
+ */
+void mostCommonTypeTaskOnCompletedHighImportance(){
+    int index = 0;
+    const int MAX_TASK_TYPES = 100;
+    std::string taskTypeNames[MAX_TASK_TYPES];
+    int taskTypeCounts[MAX_TASK_TYPES];
+    int taskTypeNum = 0;
+    for (int i = 0; i < MAX_TASK_TYPES; i++) {
+        taskTypeCounts[i] = 0;
+    }
+    while (people.get(index) != nullptr) {
+        int numTasks = people.get(index)->completedTasks.getLength();
+        for (int i = 0; i < numTasks; i++) {
+            if (people.get(index)->completedTasks.get(i)->importance == "Alto") {
+                std::string taskTypeName = people.get(index)->completedTasks.get(i)->type->name;
+                int j;
+                for (j = 0; j < taskTypeNum; j++) {
+                    if (taskTypeNames[j] == taskTypeName) {
+                        taskTypeCounts[j]++;
+                        break;
+                    }
+                }       /*Si el tipo de tarea ya existe en el arreglo, incrementa su contador*/
+                if (j == taskTypeNum) {
+                    if (taskTypeNum >= MAX_TASK_TYPES) {
+                        std::cout << "Error: demasiados tipos de tareas." << std::endl;
+                        return;
+                    }
+                    taskTypeNames[taskTypeNum] = taskTypeName;
+                    taskTypeCounts[taskTypeNum] = 1;
+                    taskTypeNum++;
+                }   /*Si es un nuevo tipo de tarea, lo agrega al arreglo y establece su contador en 1*/
+            }
+        }
+        index++;
+    }
+    if (taskTypeNum > 0) {
+        int maxCount = 0;
+        for (int i = 0; i < taskTypeNum; i++) {
+            if (taskTypeCounts[i] > maxCount) {
+                maxCount = taskTypeCounts[i];
+            }
+        }   /*Encuentra el número máximo de ocurrencias entre los tipos de tareas*/
+        int numMostCommon = 0;
+        std::string mostCommonTaskTypes[MAX_TASK_TYPES];
+        for (int i = 0; i < taskTypeNum; i++) {
+            if (taskTypeCounts[i] == maxCount) {
+                mostCommonTaskTypes[numMostCommon] = taskTypeNames[i];
+                numMostCommon++;
+            }
+        }   /*Recopila los tipos de tareas con el máximo número de ocurrencias*/
+        std::cout << "Tipo(s) de tarea mas comun(es) con importancia 'Alto' completadas con " << maxCount << " ocurrencia(s):" << std::endl;
+        for (int i = 0; i < numMostCommon; i++) {
+            std::cout << "- " << mostCommonTaskTypes[i] << std::endl;
+        }
+    } else {
+        std::cout << "No hay tareas completadas con importancia 'Alto'" << std::endl;
+    }
+}
+
+/**
+ * @brief Muestra el menú de consultas y gestiona la interacción del usuario.
+ *
+ * Esta función presenta un menú con diversas opciones de consulta relacionadas con tareas y personas.
+ * El usuario puede seleccionar una opción y se ejecutará la función correspondiente.
+ * El menú se repite en un bucle hasta que el usuario elige salir seleccionando la opción 9.
+ * @author Joseph
+ */
 void queryMenu(){
     system("cls");
   COORD pos = getCursorPosition(hConsole);
@@ -945,6 +1148,21 @@ void queryMenu(){
         break;
       case 5:
         mostCommonExpiredTask();
+        cout << "Presione enter para continuar...";
+        waitEnter();
+        break;
+      case 6:
+        mostCommonImportance();
+        cout << "Presione enter para continuar...";
+        waitEnter();
+        break;
+      case 7:
+        mostCommonTypeTaskOnActiveMediumImportance();
+        cout << "Presione enter para continuar...";
+        waitEnter();
+        break;
+      case 8:
+        mostCommonTypeTaskOnCompletedHighImportance();
         cout << "Presione enter para continuar...";
         waitEnter();
         break;
@@ -1178,8 +1396,8 @@ void menuReportes() {
             cin >> tareaABuscar;
             Task* tareaActual = actual->activeTasks.head;
             while (tareaActual->id != tareaABuscar) {
-                actual = actual->next;
-                if (actual == nullptr)
+                tareaActual = tareaActual->next;
+                if (tareaActual == nullptr)
                     noTareasActivas = true;
                 break;
             }
