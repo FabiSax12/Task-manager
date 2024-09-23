@@ -41,5 +41,7 @@ void clearInputBuffer();
 
 void verifyInputType();
 
+bool validateDates(int &day,int &month,int &year,string dateStr);
+
 #include "utils.cpp"
 #endif // UTILS_H
