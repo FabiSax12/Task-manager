@@ -24,16 +24,26 @@ HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 /**
  * @brief Agrega una tarea activa a una persona.
  *
- * Busca a la persona por su ID y agrega una tarea a su lista de tareas activas.
+ * Busca a la persona por su ID y agrega una tarea a su lista de tareas activas o completadas.
  *
  * @param personId Identificador de la persona a la que se le agregará la tarea.
  * @param task Puntero a la tarea que se va a agregar.
+ * @param completed Define si la tarea está completada o no
  * @throws runtime_error Si la persona no se encuentra.
  * @author fabian
  */
-void addTask(const int personId, Task* task) {
+void addTask(const int personId, Task* task, bool completed = false) {
     Person* person = people.findById(personId);
     if (!person) throw runtime_error("Persona no encontrada");
+
+    if (completed) {
+        if (const Task* lastTask = person->completedTasks.get(-1))
+            task->id = lastTask->id + 1;
+        else task->id = 1;
+
+        person->completedTasks.insertLast(task);
+        return;
+    }
 
     if (const Task* lastTask = person->activeTasks.get(-1))
         task->id = lastTask->id + 1;
@@ -173,8 +183,6 @@ void subTaskProgress(const int personId, const int taskId, const int subTaskInde
  * @author fabian.
  */
 void cargarDatos() {
-    cout << "Datos Cargados" << endl;
-
     // Insertar tipos de tareas
     taskTypes.insert("Estudio", "Tareas y exámenes");
     taskTypes.insert("Hogar", "Tareas de la casa");
@@ -189,21 +197,112 @@ void cargarDatos() {
     people.insert(208620697, "Laura", "Jimenez", 25);
     people.insert(208620698, "Jose", "Gonzalez", 28);
 
-    // Insertar tareas
+    // Insertar tareas activas y completadas para cada persona
+    // Fabian
     addTask(208620694, new Task("Examenes", "Medio", "01-09-2024", "12:00:00", taskTypes.get(0)));
     addTask(208620694, new Task("Barrer", "Bajo", "20-09-2024", "08:00:00", taskTypes.get(1)));
-    addTask(208620695, new Task("Proyecto", "Alto", "15-09-2024", "14:00:00", taskTypes.get(0)));
-    addTask(208620696, new Task("Trabajo", "Alto", "22-09-2024", "09:00:00", taskTypes.get(2)));
-    addTask(208620697, new Task("Ejercicio", "Medio", "18-09-2024", "06:00:00", taskTypes.get(3)));
+    addTask(208620694, new Task("Proyecto", "Alto", "15-09-2024", "14:00:00", taskTypes.get(0)));
+    addTask(208620694, new Task("Gimnasio", "Medio", "18-09-2024", "06:00:00", taskTypes.get(3)));
+    addTask(208620694, new Task("Videojuegos", "Bajo", "19-09-2024", "17:00:00", taskTypes.get(4)));
+    addTask(208620694, new Task("Examenes", "Medio", "01-08-2024", "12:00:00", taskTypes.get(0)), true);
+    addTask(208620694, new Task("Limpiar", "Bajo", "15-08-2024", "09:00:00", taskTypes.get(1)), true);
+    addTask(208620694, new Task("Trabajo", "Alto", "10-08-2024", "09:00:00", taskTypes.get(2)), true);
+    addTask(208620694, new Task("Cardio", "Medio", "20-08-2024", "06:00:00", taskTypes.get(3)), true);
+    addTask(208620694, new Task("Leer", "Bajo", "25-08-2024", "20:00:00", taskTypes.get(4)), true);
 
-    // Insertar subtareas
+    // Ana
+    addTask(208620695, new Task("Investigacion", "Alto", "25-09-2024", "13:00:00", taskTypes.get(0)));
+    addTask(208620695, new Task("Cocinar", "Medio", "20-09-2024", "18:00:00", taskTypes.get(1)));
+    addTask(208620695, new Task("Reunión", "Alto", "22-09-2024", "10:00:00", taskTypes.get(2)));
+    addTask(208620695, new Task("Yoga", "Bajo", "23-09-2024", "07:00:00", taskTypes.get(3)));
+    addTask(208620695, new Task("Cine", "Bajo", "24-09-2024", "19:00:00", taskTypes.get(4)));
+    addTask(208620695, new Task("Tesis", "Alto", "10-08-2024", "14:00:00", taskTypes.get(0)), true);
+    addTask(208620695, new Task("Lavar ropa", "Bajo", "12-08-2024", "09:00:00", taskTypes.get(1)), true);
+    addTask(208620695, new Task("Reporte", "Medio", "11-08-2024", "09:00:00", taskTypes.get(2)), true);
+    addTask(208620695, new Task("Correr", "Medio", "13-08-2024", "06:00:00", taskTypes.get(3)), true);
+    addTask(208620695, new Task("Leer libro", "Bajo", "15-08-2024", "20:00:00", taskTypes.get(4)), true);
+
+    // Carlos
+    addTask(208620696, new Task("Examen de Física", "Medio", "05-09-2024", "11:00:00", taskTypes.get(0)));
+    addTask(208620696, new Task("Lavar platos", "Bajo", "07-09-2024", "09:00:00", taskTypes.get(1)));
+    addTask(208620696, new Task("Presentación", "Alto", "08-09-2024", "09:30:00", taskTypes.get(2)));
+    addTask(208620696, new Task("Ciclismo", "Medio", "10-09-2024", "07:00:00", taskTypes.get(3)));
+    addTask(208620696, new Task("Series", "Bajo", "12-09-2024", "20:00:00", taskTypes.get(4)));
+    addTask(208620696, new Task("Proyecto Final", "Alto", "15-08-2024", "12:00:00", taskTypes.get(0)), true);
+    addTask(208620696, new Task("Aspirar", "Bajo", "17-08-2024", "09:00:00", taskTypes.get(1)), true);
+    addTask(208620696, new Task("Reporte mensual", "Alto", "18-08-2024", "10:00:00", taskTypes.get(2)), true);
+    addTask(208620696, new Task("Nadar", "Medio", "19-08-2024", "06:00:00", taskTypes.get(3)), true);
+    addTask(208620696, new Task("Salir con amigos", "Bajo", "20-08-2024", "20:00:00", taskTypes.get(4)), true);
+
+    // Laura
+    addTask(208620697, new Task("Clase de Inglés", "Medio", "11-09-2024", "10:00:00", taskTypes.get(0)));
+    addTask(208620697, new Task("Organizar casa", "Bajo", "12-09-2024", "11:00:00", taskTypes.get(1)));
+    addTask(208620697, new Task("Entrega de informes", "Alto", "13-09-2024", "14:00:00", taskTypes.get(2)));
+    addTask(208620697, new Task("Pilates", "Medio", "14-09-2024", "08:00:00", taskTypes.get(3)));
+    addTask(208620697, new Task("Leer revista", "Bajo", "15-09-2024", "16:00:00", taskTypes.get(4)));
+    addTask(208620697, new Task("Ensayo", "Alto", "01-08-2024", "11:00:00", taskTypes.get(0)), true);
+    addTask(208620697, new Task("Ordenar armario", "Bajo", "02-08-2024", "10:00:00", taskTypes.get(1)), true);
+    addTask(208620697, new Task("Correo", "Alto", "04-08-2024", "13:00:00", taskTypes.get(2)), true);
+    addTask(208620697, new Task("Pesas", "Medio", "05-08-2024", "07:00:00", taskTypes.get(3)), true);
+    addTask(208620697, new Task("Series", "Bajo", "06-08-2024", "18:00:00", taskTypes.get(4)), true);
+
+    // Jose
+    addTask(208620698, new Task("Matemáticas", "Medio", "16-09-2024", "09:00:00", taskTypes.get(0)));
+    addTask(208620698, new Task("Pintar", "Bajo", "17-09-2024", "10:00:00", taskTypes.get(1)));
+    addTask(208620698, new Task("Planificación", "Alto", "18-09-2024", "11:00:00", taskTypes.get(2)));
+    addTask(208620698, new Task("Fútbol", "Medio", "19-09-2024", "17:00:00", taskTypes.get(3)));
+    addTask(208620698, new Task("Escuchar música", "Bajo", "20-09-2024", "18:00:00", taskTypes.get(4)));
+    addTask(208620698, new Task("Examen Matemáticas", "Medio", "01-08-2024", "12:00:00", taskTypes.get(0)), true);
+    addTask(208620698, new Task("Tareas del hogar", "Bajo", "05-08-2024", "09:00:00", taskTypes.get(1)), true);
+    addTask(208620698, new Task("Proyecto de software", "Alto", "09-08-2024", "10:00:00", taskTypes.get(2)), true);
+    addTask(208620698, new Task("Rutina de ejercicios", "Medio", "11-08-2024", "06:00:00", taskTypes.get(3)), true);
+    addTask(208620698, new Task("Series", "Bajo", "13-08-2024", "20:00:00", taskTypes.get(4)), true);
+
+    // Insertar subtareas para tareas de tipo "Estudio"
+    // Subtareas para Fabian
     addSubTask(208620694, 0, new SubTask("Calculo", "Estudiar último tema", 65.3));
     addSubTask(208620694, 0, new SubTask("Física", "Revisar apuntes", 40.0));
     addSubTask(208620694, 0, new SubTask("Matemáticas", "Resolver ejercicios", 70.0));
-    addSubTask(208620694, 1, new SubTask("Limpieza", "Cocina", 50.0));
-    addSubTask(208620695, 0, new SubTask("Investigación", "Recopilar datos", 80.0));
-    addSubTask(208620696, 0, new SubTask("Informe", "Redactar conclusiones", 90.0));
-    addSubTask(208620697, 0, new SubTask("Planificación", "Definir horarios", 75.0));
+    addSubTask(208620694, 0, new SubTask("Química", "Estudiar fórmulas", 60.0));
+    addSubTask(208620694, 0, new SubTask("Biología", "Leer capítulos", 55.0));
+    addSubTask(208620694, 0, new SubTask("Historia", "Revisar fechas", 50.0));
+    addSubTask(208620694, 0, new SubTask("Inglés", "Práctica oral", 45.0));
+
+    // Subtareas para Ana
+    addSubTask(208620695, 0, new SubTask("Datos", "Analizar resultados", 80.0));
+    addSubTask(208620695, 0, new SubTask("Entrevistas", "Realizar encuestas", 75.0));
+    addSubTask(208620695, 0, new SubTask("Literatura", "Revisar fuentes", 60.0));
+    addSubTask(208620695, 0, new SubTask("Estadística", "Procesar datos", 85.0));
+    addSubTask(208620695, 0, new SubTask("Escribir", "Redacción del informe", 90.0));
+    addSubTask(208620695, 0, new SubTask("Presentación", "Preparar diapositivas", 65.0));
+    addSubTask(208620695, 0, new SubTask("Revisión", "Corregir errores", 70.0));
+
+    // Subtareas para Carlos
+    addSubTask(208620696, 0, new SubTask("Estática", "Resolver problemas", 55.0));
+    addSubTask(208620696, 0, new SubTask("Dinámica", "Estudiar ejemplos", 50.0));
+    addSubTask(208620696, 0, new SubTask("Termodinámica", "Revisar conceptos", 60.0));
+    addSubTask(208620696, 0, new SubTask("Óptica", "Practicar problemas", 45.0));
+    addSubTask(208620696, 0, new SubTask("Electricidad", "Resolver circuitos", 65.0));
+    addSubTask(208620696, 0, new SubTask("Magnetismo", "Leer teoría", 70.0));
+    addSubTask(208620696, 0, new SubTask("Mecánica", "Practicar con ejercicios", 75.0));
+
+    // Subtareas para Laura
+    addSubTask(208620697, 0, new SubTask("Vocabulario", "Memorizar palabras", 50.0));
+    addSubTask(208620697, 0, new SubTask("Gramática", "Estudiar reglas", 55.0));
+    addSubTask(208620697, 0, new SubTask("Conversación", "Practicar diálogos", 60.0));
+    addSubTask(208620697, 0, new SubTask("Escucha", "Escuchar audios", 65.0));
+    addSubTask(208620697, 0, new SubTask("Lectura", "Leer textos", 70.0));
+    addSubTask(208620697, 0, new SubTask("Escritura", "Redactar ensayos", 75.0));
+    addSubTask(208620697, 0, new SubTask("Pronunciación", "Mejorar acento", 80.0));
+
+    // Subtareas para Jose
+    addSubTask(208620698, 0, new SubTask("Álgebra", "Resolver ecuaciones", 50.0));
+    addSubTask(208620698, 0, new SubTask("Geometría", "Estudiar figuras", 55.0));
+    addSubTask(208620698, 0, new SubTask("Trigonometría", "Revisar identidades", 60.0));
+    addSubTask(208620698, 0, new SubTask("Cálculo", "Derivadas e integrales", 65.0));
+    addSubTask(208620698, 0, new SubTask("Estadística", "Analizar datos", 70.0));
+    addSubTask(208620698, 0, new SubTask("Probabilidad", "Resolver problemas", 75.0));
+    addSubTask(208620698, 0, new SubTask("Lógica", "Practicar razonamientos", 80.0));
 }
 
 /**
@@ -569,7 +668,7 @@ void editionMenu() {
     while (true) {
         int option = 0;
         system("cls");
-        cout << endl << "Bienvenid@ al gestor de tareas" << endl << endl;
+        cout << endl << "Actualizar informacion" << endl << endl;
         cout << "Opciones" << endl;
         cout << "1. Insertar un nuevo Tipo de tarea" << endl;
         cout << "2. Insertar nueva persona" << endl;
@@ -1508,7 +1607,7 @@ void menu() {
   int option=0;
   while(true){
     system("cls");
-    cout << "Menu" << endl;
+      cout << endl << "Bienvenid@ al gestor de tareas" << endl << endl;
     cout << "1. Actualizacion de informacion" << endl;
     cout << "2. Consultas" << endl;
     cout << "3. Informes" << endl;
